@@ -8,6 +8,7 @@ class Explorer:
     """Explorer class to extract block information."""
 
     def __init__(self):
+        """Build an explorer."""
         self.base = "https://lcd-juno.itastakers.com"
         self.__txs = {}
 
@@ -310,6 +311,7 @@ class Txn:
     """
 
     def __init__(self, txn, tx_response):
+        """Build a txn."""
         self._txn = txn
         self._tx_response = tx_response
 

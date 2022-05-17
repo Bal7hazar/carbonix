@@ -1,7 +1,7 @@
 """Dashboard view module."""
 
 from colour import Color
-from dash import Dash, dcc, html
+from dash import Dash, Input, Output, dcc, html
 
 
 class Dashboard(Dash):
@@ -10,8 +10,10 @@ class Dashboard(Dash):
     purple = Color("#A048FE")
     green = Color("#83DA90")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, controller, *args, **kwargs):
+        """Build a dashboard."""
         super().__init__(*args, **kwargs)
+        self._controller = controller
 
         # content
         self._contract_metrics = None
@@ -25,6 +27,16 @@ class Dashboard(Dash):
 
         # setup
         self.setup_layout()
+        self.callback(
+            [
+                Output(component_id="contract-content", component_property="children"),
+                Output(
+                    component_id="distribution-content", component_property="children"
+                ),
+                Output(component_id="sale-content", component_property="children"),
+            ],
+            Input(component_id="projects-dropdown", component_property="value"),
+        )(self.update)
 
     def setup_layout(self):
         """Set up layout."""
@@ -32,9 +44,11 @@ class Dashboard(Dash):
         self.layout = html.Div(
             children=[
                 self.header(),
+                self.project(),
                 self.contract_section(),
                 self.distribution_section(),
                 self.sale_section(),
+                self.garbage(),
             ]
         )
 
@@ -58,6 +72,35 @@ class Dashboard(Dash):
             ]
         )
 
+    def project(self):
+        """Return project selection view."""
+        project_names = list(self._controller.projects)
+        return html.Div(
+            children=[
+                dcc.Dropdown(
+                    options=project_names,
+                    value=project_names[0],
+                    id="projects-dropdown",
+                    className="dropdown-menu-center",
+                ),
+            ],
+            style={"margin": "0% 40% 0% 40%"},
+        )
+
+    def garbage(self):
+        """Return garbage view."""
+        return html.Div(id="garbage", style={"display": "none"})
+
+    def update(self, project_name):
+        """Trigger the controller update method."""
+        project = self._controller.projects.get(project_name)
+        self._controller.update(project)
+        return [
+            self.contract_children(),
+            self.distribution_children(),
+            self.sale_children(),
+        ]
+
     def contract_section(self):
         """Return contract header."""
         header = html.H3(
@@ -77,12 +120,19 @@ class Dashboard(Dash):
 
     def contract_content(self):
         """Return contract content."""
-        children = [
+        return html.Div(
+            id="contract-content",
+            children=self.contract_children(),
+            style={"display": "flex"},
+        )
+
+    def contract_children(self):
+        """Return contract children."""
+        return [
             self.contract_metrics,
             self.contract_supply,
             self.contract_minted,
         ]
-        return html.Div(children=children, style={"display": "flex"})
 
     @property
     def contract_metrics(self):
@@ -129,7 +179,6 @@ class Dashboard(Dash):
         self._contract_metrics = html.Div(
             children=children, className="topic", style={"width": "30%"}
         )
-        self.setup_layout()
 
     @property
     def contract_supply(self):
@@ -148,7 +197,6 @@ class Dashboard(Dash):
         self._contract_supply = html.Div(
             children=children, className="topic", style={"width": "35%"}
         )
-        self.setup_layout()
 
     @property
     def contract_minted(self):
@@ -167,7 +215,6 @@ class Dashboard(Dash):
         self._contract_minted = html.Div(
             children=children, className="topic", style={"width": "35%"}
         )
-        self.setup_layout()
 
     def distribution_section(self):
         """Return distribution header."""
@@ -188,14 +235,21 @@ class Dashboard(Dash):
 
     def distribution_content(self):
         """Return distribution content."""
-        children = [
+        return html.Div(
+            id="distribution-content",
+            children=self.distribution_children(),
+            style={"display": "flex"},
+        )
+
+    def distribution_children(self):
+        """Return distribution children."""
+        return [
             html.Div(
                 children=[self.distribution_metrics, self.distribution_histogram],
                 style={"width": "50%"},
             ),
             self.distribution_network,
         ]
-        return html.Div(children=children, style={"display": "flex"})
 
     @property
     def distribution_metrics(self):
@@ -222,7 +276,6 @@ class Dashboard(Dash):
             children=children,
             className="topic",
         )
-        self.setup_layout()
 
     @property
     def distribution_histogram(self):
@@ -242,7 +295,6 @@ class Dashboard(Dash):
             children=children,
             className="topic",
         )
-        self.setup_layout()
 
     @property
     def distribution_network(self):
@@ -262,7 +314,6 @@ class Dashboard(Dash):
         self._distribution_network = html.Div(
             children=children, className="topic", style={"width": "50%"}
         )
-        self.setup_layout()
 
     def sale_section(self):
         """Return sale section."""
@@ -283,11 +334,16 @@ class Dashboard(Dash):
 
     def sale_content(self):
         """Return sale content."""
-        children = [
+        return html.Div(
+            id="sale-content", children=self.sale_children(), style={"display": "flex"}
+        )
+
+    def sale_children(self):
+        """Return sale children."""
+        return [
             self.sale_metrics,
             self.sale_histogram,
         ]
-        return html.Div(children=children, style={"display": "flex"})
 
     @property
     def sale_metrics(self):
@@ -320,7 +376,6 @@ class Dashboard(Dash):
         self._sale_metrics = html.Div(
             children=children, className="topic", style={"width": "20%"}
         )
-        self.setup_layout()
 
     @property
     def sale_histogram(self):
@@ -337,4 +392,3 @@ class Dashboard(Dash):
         self._sale_histogram = html.Div(
             children=children, className="topic", style={"width": "100%"}
         )
-        self.setup_layout()

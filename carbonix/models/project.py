@@ -9,6 +9,7 @@ class Project:
     """Project class."""
 
     def __init__(self, address) -> None:
+        """Build a project."""
         self._address = address
         self._explorer = Explorer()
 

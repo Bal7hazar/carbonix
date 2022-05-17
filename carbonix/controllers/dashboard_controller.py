@@ -39,13 +39,18 @@ class DashboardController:
     green = Color("#83DA90")
 
     def __init__(self) -> None:
-        self.view = Dashboard()
-        self.projects = [Project(address) for address in CONTRACT_ADDRESSES]
+        """Build a dashboard controller."""
+        projects = [Project(address) for address in CONTRACT_ADDRESSES]
+        self.projects = {project.name: project for project in projects}
+        self.view = Dashboard(self)
+        self.update(next(iter(self.projects.values())))
 
-        project = self.projects[0]
+    def update(self, project):
+        """Update the whole view."""
         self.update_contract(project)
         self.update_distribution(project)
         self.update_sale(project)
+        self.view.setup_layout()
 
     def update_contract(self, project):
         """Update contract view of the project."""
