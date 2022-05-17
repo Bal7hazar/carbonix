@@ -335,7 +335,7 @@ class Txn:
         """Return sender."""
         messages = self._tx_response.get("tx").get("body").get("messages")
         if not messages:
-            return
+            return None
         return messages[0].get("sender")
 
     @property
@@ -343,7 +343,7 @@ class Txn:
         """Return amount."""
         funds = self._tx_response.get("tx").get("body").get("messages")[0].get("funds")
         if not funds:
-            return
+            return None
         return int(funds[0].get("amount"))
 
     @property
@@ -351,7 +351,7 @@ class Txn:
         """Return tx message."""
         messages = self._tx_response.get("tx").get("body").get("messages")
         if not messages:
-            return
+            return None
         return messages[0].get("msg")
 
     @property

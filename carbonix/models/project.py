@@ -1,5 +1,7 @@
 """Project module."""
 
+from functools import cached_property
+
 import numpy as np
 
 from carbonix.models.explorer import Explorer
@@ -13,7 +15,7 @@ class Project:
         self._address = address
         self._explorer = Explorer()
 
-    @property
+    @cached_property
     def address(self):
         """Return address.
 
@@ -27,12 +29,12 @@ class Project:
         """
         return self._address
 
-    @property
+    @cached_property
     def mintscan(self):
         """Return mintscan url."""
         return f"https://www.mintscan.io/juno/wasm/contract/{self.address}"
 
-    @property
+    @cached_property
     def price(self):
         """Return NFT price.
 
@@ -48,8 +50,8 @@ class Project:
         price = txn.message.get("update_price").get("price")
         return int(price.get("amount"))
 
-    @property
-    def price_unit(self):
+    @cached_property
+    def unit(self):
         """Return NFT price.
 
         Example:
@@ -57,14 +59,14 @@ class Project:
             >>> from carbonix.resources import CONTRACT_ADDRESSES
             >>> address = next(iter(CONTRACT_ADDRESSES))
             >>> project = Project(address)
-            >>> print(project.price)
-            9800000
+            >>> print(project.unit)
+            ujuno
         """
         txn = self._explorer.price_txs(self.address)[-1]
         price = txn.message.get("update_price").get("price")
         return price.get("denom")
 
-    @property
+    @cached_property
     def total_market_supply(self):
         """Return total market supply.
 
@@ -79,7 +81,7 @@ class Project:
         txn = self._explorer.supply_txs(self.address)[-1]
         return int(txn.message.get("update_supply").get("market_supply"))
 
-    @property
+    @cached_property
     def total_reserved_supply(self):
         """Return total reserved supply.
 
@@ -94,7 +96,7 @@ class Project:
         txn = self._explorer.supply_txs(self.address)[-1]
         return int(txn.message.get("update_supply").get("reserved_supply"))
 
-    @property
+    @cached_property
     def total_whitelist_supply(self):
         """Return total whitelist supply.
 
@@ -108,7 +110,35 @@ class Project:
         """
         return sum(self.whitelists().values())
 
-    @property
+    @cached_property
+    def total_public_supply(self):
+        """Reutn total public supply.
+
+        Example:
+            >>> from carbonix.models.project import Project
+            >>> from carbonix.resources import CONTRACT_ADDRESSES
+            >>> address = next(iter(CONTRACT_ADDRESSES))
+            >>> project = Project(address)
+            >>> print(project.total_public_supply)
+            160
+        """
+        return self.total_market_supply - self.total_whitelist_supply
+
+    @cached_property
+    def total_supply(self):
+        """Reutn total supply.
+
+        Example:
+            >>> from carbonix.models.project import Project
+            >>> from carbonix.resources import CONTRACT_ADDRESSES
+            >>> address = next(iter(CONTRACT_ADDRESSES))
+            >>> project = Project(address)
+            >>> print(project.total_supply)
+            160
+        """
+        return self.total_market_supply + self.total_reserved_supply
+
+    @cached_property
     def total_market_minted(self):
         """Return total market minted.
 
@@ -124,7 +154,7 @@ class Project:
         price = self.price
         return sum(int(mint.get("amount") / price) for mint in mints.values())
 
-    @property
+    @cached_property
     def total_reserved_minted(self):
         """Return total reserved minted.
 
@@ -138,7 +168,7 @@ class Project:
         """
         return self.total_reserved_supply  # FIXME: how to find reserved mints?
 
-    @property
+    @cached_property
     def total_whitelist_minted(self):
         """Return total whitelist minted.
 
@@ -159,7 +189,35 @@ class Project:
             if mint.get("timestamp") <= sale_timestamp
         )
 
-    @property
+    @cached_property
+    def total_public_minted(self):
+        """Reutn total public minted.
+
+        Example:
+            >>> from carbonix.models.project import Project
+            >>> from carbonix.resources import CONTRACT_ADDRESSES
+            >>> address = next(iter(CONTRACT_ADDRESSES))
+            >>> project = Project(address)
+            >>> print(project.total_public_minted)
+            160
+        """
+        return self.total_market_minted - self.total_whitelist_minted
+
+    @cached_property
+    def total_minted(self):
+        """Reutn total minted.
+
+        Example:
+            >>> from carbonix.models.project import Project
+            >>> from carbonix.resources import CONTRACT_ADDRESSES
+            >>> address = next(iter(CONTRACT_ADDRESSES))
+            >>> project = Project(address)
+            >>> print(project.total_minted)
+            160
+        """
+        return self.total_market_minted + self.total_reserved_minted
+
+    @cached_property
     def max_buy_at_once(self):
         """Return max buy at once.
 
@@ -174,7 +232,7 @@ class Project:
         txn = self._explorer.max_buy_txs(self.address)[-1]
         return int(txn.message.get("max_buy_at_once"))
 
-    @property
+    @cached_property
     def name(self):
         """Return project name.
 
@@ -190,7 +248,7 @@ class Project:
         metadata = txn.message.get("update_metadata").get("metadata")
         return metadata.get("name")
 
-    @property
+    @cached_property
     def description(self):
         """Return project description.
 
@@ -206,7 +264,7 @@ class Project:
         metadata = txn.message.get("update_metadata").get("metadata")
         return metadata.get("description")
 
-    @property
+    @cached_property
     def image(self):
         """Return project image.
 
@@ -222,7 +280,7 @@ class Project:
         metadata = txn.message.get("update_metadata").get("metadata")
         return metadata.get("image")
 
-    @property
+    @cached_property
     def presale_timestamp(self):
         """Return project presale timestamp.
 
@@ -240,7 +298,7 @@ class Project:
         ]
         return enabled_txs[-1].timestamp
 
-    @property
+    @cached_property
     def sale_timestamp(self):
         """Return project sale timestamp.
 
@@ -256,7 +314,7 @@ class Project:
         enabled_txs = [txn for txn in txs if txn.message.get("sell_mode").get("enable")]
         return enabled_txs[-1].timestamp
 
-    @property
+    @cached_property
     def height_timedelta(self):
         """Return estimated height time duration.
 
