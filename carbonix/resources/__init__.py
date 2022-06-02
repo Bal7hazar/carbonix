@@ -5,6 +5,9 @@ from pathlib import Path
 RESOURCES_PATH = Path(__file__).parent
 
 
+DATA_BASE = RESOURCES_PATH / "database.pickle"
+
+
 CONTRACT_ADDRESSES = [
     "juno17ctm453vqp0qvummupzln8q7cayeka0cfu7kfgm22qlqgl7zua0s32v5ld",
     "juno1fl7vq8hwej2lr67f08w3xmsgsctupngeyd5cl6650pj3g0ddslasctjvf0",

@@ -1,29 +1,53 @@
 """Explorer main module."""
 
+import base64
+import json
+import pickle
+import re
+from copy import deepcopy
+from functools import lru_cache
+
 import pandas as pd
 import requests
+
+from carbonix.resources import DATA_BASE
 
 
 class Explorer:
     """Explorer class to extract block information."""
 
+    base = "https://rpc.junomint.com"
+
     def __init__(self):
         """Build an explorer."""
-        self.base = "https://lcd-juno.itastakers.com"
-        self.__txs = {}
+        self.__database = DataBase()
 
-    def _txs(self, address, action, offset=0):
+    def _txs(self, address, action, force, **kwargs):
         """Return <action> txs at specified address by batch of 100."""
-        command = "cosmos/tx/v1beta1"
-        option = "txs"
-        event_option = "events"
-        event_value = f"{action}._contract_address='{address}'"
-        pagination_option = "pagination.offset"
-        pagination_value = f"{offset}"
-        api = f"{self.base}/{command}/{option}?{event_option}={event_value}&{pagination_option}={pagination_value}"
-        return self.__txs.setdefault(api, requests.get(api).json())
+        command = "tx_search"
 
-    def txs(self, address):
+        query_value = f"{action}=%27{address}%27"
+        query = f'query="{query_value}"'
+
+        prove_value = str(kwargs.get("prove", False)).lower()
+        prove = f"prove={prove_value}"
+
+        page_value = kwargs.get("page", 1)
+        page = f"page={page_value}"
+
+        per_page_value = kwargs.get("per_page", 30)
+        per_page = f"per_page={per_page_value}"
+
+        order_by_value = kwargs.get("order_by", "asc")
+        order_by = f'order_by="{order_by_value}"'
+
+        api = f"{self.base}/{command}?{query}&{prove}&{page}&{per_page}&{order_by}"
+
+        if force:  # force the request what ever the database content
+            return deepcopy(requests.get(api).json())
+        return deepcopy(self.__database.setdefault(api, requests.get(api).json()))
+
+    def txs(self, address, force=False):
         """Return txs executed by the specified address.
 
         Txs are sorted by execution timestamp.
@@ -43,34 +67,37 @@ class Explorer:
             ['add_admin', 'add_to_whitelist', 'buy', 'max_buy_at_once', 'multi_buy', 'pre_sell_mode', 'sell_mode', 'update_metadata', 'update_nft_contract', 'update_price', 'update_supply', 'withdraw']
         """
         # instantiate
-        action = "instantiate"
-        instantiate_txs = self._txs(address, action)
-        txs_total = int(instantiate_txs.get("pagination").get("total"))
+        action = "instantiate._contract_address"
+        instantiate_txs = self._txs(address, action, force=force).get("result", {})
+        txs_total = int(instantiate_txs.get("total_count"))
         txs_number = len(instantiate_txs.get("txs"))
+        page = 1
         while txs_number < txs_total:
-            response = self._txs(address, action, offset=txs_number)
+            page += 1
+            response = self._txs(address, action, force=force, page=page).get(
+                "result", {}
+            )
             instantiate_txs["txs"] += response.get("txs")
-            instantiate_txs["tx_responses"] += response.get("tx_responses")
             txs_number += len(response.get("txs"))
 
         # execute
-        action = "execute"
-        execute_txs = self._txs(address, action)
-        txs_total = int(execute_txs.get("pagination").get("total"))
-        txs_number = len(execute_txs.get("txs"))
+        action = "execute._contract_address"
+        execute_txs = self._txs(address, action, force=force).get("result", {})
+        txs_total = int(execute_txs.get("total_count", 0))
+        txs_number = len(execute_txs.get("txs", []))
+        page = 1
         while txs_number < txs_total:
-            response = self._txs(address, action, offset=txs_number)
+            page += 1
+            response = self._txs(address, action, force=force, page=page).get(
+                "result", {}
+            )
             execute_txs["txs"] += response.get("txs")
-            execute_txs["tx_responses"] += response.get("tx_responses")
             txs_number += len(response.get("txs"))
 
-        return [
-            Txn(txn, tx_response)
-            for txn, tx_response in zip(
-                instantiate_txs.get("txs") + execute_txs.get("txs"),
-                instantiate_txs.get("tx_responses") + execute_txs.get("tx_responses"),
-            )
-        ]
+        return set(
+            Txn(txn, self.__database)
+            for txn in instantiate_txs.get("txs") + execute_txs.get("txs")
+        )
 
     def mint_txs(self, address):
         """Return txs for which receivers are the specifed address.
@@ -84,11 +111,11 @@ class Explorer:
             >>> txs = explorer.mint_txs(address)
             >>> print(len(txs))
             98
-            >>> print(txs[0].message)
-            {'multi_buy': {'quantity': 5}}
         """
         keywords = {"buy", "multi_buy"}
-        return [txn for txn in self.txs(address) if keywords.intersection(txn.methods)]
+        return set(
+            txn for txn in self.txs(address) if keywords.intersection(txn.methods)
+        )
 
     def whitelist_txs(self, address):
         """Return whitelist txs defined for the specied contract address.
@@ -102,11 +129,11 @@ class Explorer:
             >>> txs = explorer.whitelist_txs(address)
             >>> print(len(txs))
             17
-            >>> print(txs[-1].message)
-            {'add_to_whitelist': {'entries': [{'address': 'juno1q0f955ref9a8afzjrhv7gph3sv75sssdrad4qe', 'nb_slots': 1}]}}
         """
         keywords = {"add_to_whitelist"}
-        return [txn for txn in self.txs(address) if keywords.intersection(txn.methods)]
+        return set(
+            txn for txn in self.txs(address) if keywords.intersection(txn.methods)
+        )
 
     def admin_txs(self, address):
         """Return admin txs defined for the specied contract address.
@@ -120,11 +147,11 @@ class Explorer:
             >>> txs = explorer.admin_txs(address)
             >>> print(len(txs))
             1
-            >>> print(txs[-1].message)
-            {'add_admin': {'address': 'juno1vdekn9mfycsx5yhytzj2n0hg63w09w5c5kq7gz'}}
         """
         keywords = {"add_admin"}
-        return [txn for txn in self.txs(address) if keywords.intersection(txn.methods)]
+        return set(
+            txn for txn in self.txs(address) if keywords.intersection(txn.methods)
+        )
 
     def pre_sell_mode_txs(self, address):
         """Return presale txs defined for the specied contract address.
@@ -138,16 +165,14 @@ class Explorer:
             >>> txs = explorer.pre_sell_mode_txs(address)
             >>> print(len(txs))
             6
-            >>> print(txs[-1].message)
-            {'pre_sell_mode': {'enable': False}}
         """
         keywords = {"pre_sell_mode"}
-        return [
+        return set(
             txn
             for txn in self.txs(address)
             if keywords.intersection(txn.methods)
             and isinstance(txn.message.get(next(iter(keywords))), dict)
-        ]
+        )
 
     def sell_mode_txs(self, address):
         """Return presale txs defined for the specied contract address.
@@ -161,16 +186,14 @@ class Explorer:
             >>> txs = explorer.sell_mode_txs(address)
             >>> print(len(txs))
             3
-            >>> print(txs[-1].message)
-            {'sell_mode': {'enable': True}}
         """
         keywords = {"sell_mode"}
-        return [
+        return set(
             txn
             for txn in self.txs(address)
             if keywords.intersection(txn.methods)
             and isinstance(txn.message.get(next(iter(keywords))), dict)
-        ]
+        )
 
     def price_txs(self, address):
         """Return update price txs defined for the specied contract address.
@@ -184,11 +207,11 @@ class Explorer:
             >>> txs = explorer.price_txs(address)
             >>> print(len(txs))
             4
-            >>> print(txs[-1].message)
-            {'update_price': {'price': {'denom': 'ujuno', 'amount': '9800000'}}}
         """
         keywords = {"update_price"}
-        return [txn for txn in self.txs(address) if keywords.intersection(txn.methods)]
+        return set(
+            txn for txn in self.txs(address) if keywords.intersection(txn.methods)
+        )
 
     def supply_txs(self, address):
         """Return update supply txs defined for the specied contract address.
@@ -202,11 +225,11 @@ class Explorer:
             >>> txs = explorer.supply_txs(address)
             >>> print(len(txs))
             2
-            >>> print(txs[-1].message)
-            {'update_supply': {'reserved_supply': 0, 'market_supply': 160}}
         """
         keywords = {"update_supply"}
-        return [txn for txn in self.txs(address) if keywords.intersection(txn.methods)]
+        return set(
+            txn for txn in self.txs(address) if keywords.intersection(txn.methods)
+        )
 
     def metadata_txs(self, address):
         """Return update supply txs defined for the specied contract address.
@@ -222,7 +245,9 @@ class Explorer:
             1
         """
         keywords = {"update_metadata"}
-        return [txn for txn in self.txs(address) if keywords.intersection(txn.methods)]
+        return set(
+            txn for txn in self.txs(address) if keywords.intersection(txn.methods)
+        )
 
     def max_buy_txs(self, address):
         """Return update supply txs defined for the specied contract address.
@@ -238,7 +263,9 @@ class Explorer:
             1
         """
         keywords = {"max_buy_at_once"}
-        return [txn for txn in self.txs(address) if keywords.intersection(txn.methods)]
+        return set(
+            txn for txn in self.txs(address) if keywords.intersection(txn.methods)
+        )
 
     def contacts(self, address):
         """Return all direct address which ever interacted with the specified address.
@@ -249,37 +276,44 @@ class Explorer:
             >>> explorer = Explorer()
             >>> address = "juno10p9em0g53eddvjnmclqt5mef9dk2rp7l3t39vz"
             >>> contacts = explorer.contacts(address)
-            >>> print(contacts)
-            ['osmo10p9em0g53eddvjnmclqt5mef9dk2rp7l0zpwav']
+            >>> pprint(contacts)
+            {'juno17ctm453vqp0qvummupzln8q7cayeka0cfu7kfgm22qlqgl7zua0s32v5ld',
+             'juno1a53udazy8ayufvy0s434pfwjcedzqv34q7p7vj',
+             'juno1fl7vq8hwej2lr67f08w3xmsgsctupngeyd5cl6650pj3g0ddslasctjvf0'}
         """
-        command = "cosmos/tx/v1beta1"
-        option = "txs"
-        event_option = "events"
-        contacts = list()
+        action = "transfer.sender"
+        sent_txs = self._txs(address, action, force=True).get("result", {})
+        txs_total = int(sent_txs.get("total_count"))
+        txs_number = len(sent_txs.get("txs"))
+        page = 1
+        while txs_number < txs_total:
+            page += 1
+            response = self._txs(address, action, force=True, page=page).get(
+                "result", {}
+            )
+            sent_txs["txs"] += response.get("txs")
+            txs_number += len(response.get("txs"))
+        recipients = {
+            Txn(txn, self.__database).recipient for txn in sent_txs.get("txs")
+        }
 
-        # receivers
-        event_value = f"transfer.sender='{address}'"
-        count_option = "pagination.count_total"
-        count_value = "true"
-        api = f"{self.base}/{command}/{option}?{event_option}={event_value}&{count_option}={count_value}"
-        response = requests.get(api).json()
-        for txn in response.get("tx_responses"):
-            receiver = txn.get("tx").get("body").get("messages")[0].get("receiver")
-            if receiver is not None and receiver != address:  # None = contract
-                contacts.append(receiver)
+        action = "transfer.recipient"
+        received_txs = self._txs(address, action, force=True).get("result", {})
+        txs_total = int(received_txs.get("total_count"))
+        txs_number = len(received_txs.get("txs"))
+        page = 1
+        while txs_number < txs_total:
+            page += 1
+            response = self._txs(address, action, force=True, page=page).get(
+                "result", {}
+            )
+            received_txs["txs"] += response.get("txs")
+            txs_number += len(response.get("txs"))
+        senders = {Txn(txn, self.__database).sender for txn in received_txs.get("txs")}
 
-        # sender
-        event_value = f"transfer.recipient='{address}'"
-        count_option = "pagination.count_total"
-        count_value = "true"
-        api = f"{self.base}/{command}/{option}?{event_option}={event_value}&{count_option}={count_value}"
-        response = requests.get(api).json()
-        for txn in response.get("tx_responses"):
-            sender = txn.get("tx").get("body").get("messages")[0].get("sender")
-            if sender is not None and sender != address:  # None = contract
-                contacts.append(sender)
-
-        return contacts
+        contacts = recipients.union(senders)
+        # remove address if included
+        return contacts.symmetric_difference({address}).intersection(contacts)
 
 
 class Txn:
@@ -291,75 +325,152 @@ class Txn:
         >>> from carbonix.resources import CONTRACT_ADDRESSES
         >>> address = next(iter(CONTRACT_ADDRESSES))
         >>> explorer = Explorer()
-        >>> txn = explorer.txs(address)[101]
+        >>> txn = list(sorted(explorer.txs(address), key=lambda txn: txn.height))[50]
         >>> print(txn.hash)
-        9723B2C4BDEDE9CF3369A85A25E5468A39F0A6242C8615D19036791A51C77FD3
-        >>> print(txn.memo)
-        Buy
-        >>> print(txn.methods)
-        ['buy']
-        >>> print(txn.message)
-        {'buy': {}}
+        E71EF591DCCDC8F917B4E90CAE55F95030CC44F201DF827DEA949A208113728F
         >>> print(txn.height)
-        2977691
+        2976623
         >>> print(txn.timestamp)
-        2022-05-06 14:55:29+00:00
+        2022-05-06 13:05:51+00:00
         >>> print(txn.sender)
-        juno12mqgfxh25tqrl4xz39z0t67r4q024c7qyrh54e
+        juno1kehrw27yzqyctv42drh8q08nx3cgs53t88ah7z
+        >>> print(txn.recipient)
+        juno17ctm453vqp0qvummupzln8q7cayeka0cfu7kfgm22qlqgl7zua0s32v5ld
         >>> print(txn.amount)
-        9800000
+        29400000
+        >>> print(txn.unit)
+        ujuno
+        >>> print(txn.methods)
+        ['multi_buy']
+        >>> print(txn.message)
+        {'multi_buy': {'quantity': 3}}
     """
 
-    def __init__(self, txn, tx_response):
+    message_pattern = r"\{.*\}"
+    amount_pattern = r"(?P<amount>[0-9]+)(?P<unit>[a-z]+)"
+
+    def __init__(self, txn, database):
         """Build a txn."""
         self._txn = txn
-        self._tx_response = tx_response
+        self._data = base64.b64decode(self._txn.get("tx")).decode(
+            encoding="utf-8", errors="ignore"
+        )
+        self._logs = json.loads(self._txn.get("tx_result").get("log"))
+        self._sender, self._recipient, self._amount = self._transfer()
+        self.__database = database
+
+    def _transfer(self):
+        """Extract transfer information."""
+        events = [event for log in self._logs for event in log.get("events")]
+        senders = [
+            attribute.get("value")
+            for event in events
+            for attribute in event.get("attributes")
+            if attribute.get("key") == "sender"
+        ]
+        recipients = [
+            attribute.get("value")
+            for event in events
+            for attribute in event.get("attributes")
+            if attribute.get("key") in ("recipient", "_contract_address")
+        ]
+        amounts = [
+            attribute.get("value")
+            for event in events
+            if event.get("type") == "transfer"
+            for attribute in event.get("attributes")
+            if attribute.get("key") == "amount"
+        ]
+        return (
+            senders[0] if senders else None,
+            recipients[0] if recipients else None,
+            amounts[0] if amounts else None,
+        )
+
+    def _timestamp(self):
+        """Return timestamp."""
+        command = "block"
+        height = f"height={self.height}"
+        api = f"{Explorer.base}/{command}?{height}"
+        response = self.__database.setdefault(api, requests.get(api).json())
+        return response.get("result").get("block").get("header").get("time")
 
     @property
+    @lru_cache(maxsize=None)
     def hash(self):
         """Return tx hash."""
-        return self._tx_response.get("txhash")
+        return self._txn.get("hash")
 
     @property
+    @lru_cache(maxsize=None)
     def height(self):
         """Return height."""
-        return int(self._tx_response.get("height"))
+        return int(self._txn.get("height"))
 
     @property
+    @lru_cache(maxsize=None)
     def timestamp(self):
         """Return timestamp."""
-        return pd.Timestamp(self._tx_response.get("timestamp"))
+        return pd.Timestamp(self._timestamp()).round(freq="S")
 
     @property
+    @lru_cache(maxsize=None)
     def sender(self):
         """Return sender."""
-        messages = self._tx_response.get("tx").get("body").get("messages")
-        if not messages:
-            return None
-        return messages[0].get("sender")
+        return self._sender
 
     @property
+    @lru_cache(maxsize=None)
+    def recipient(self):
+        """Return recipient."""
+        return self._recipient
+
+    @property
+    @lru_cache(maxsize=None)
     def amount(self):
         """Return amount."""
-        funds = self._tx_response.get("tx").get("body").get("messages")[0].get("funds")
-        if not funds:
-            return None
-        return int(funds[0].get("amount"))
+        match = re.match(self.amount_pattern, self._amount)
+        return int(match.group("amount"))
 
     @property
-    def message(self):
-        """Return tx message."""
-        messages = self._tx_response.get("tx").get("body").get("messages")
-        if not messages:
-            return None
-        return messages[0].get("msg")
+    @lru_cache(maxsize=None)
+    def unit(self):
+        """Return unit."""
+        match = re.match(self.amount_pattern, self._amount)
+        return match.group("unit")
 
     @property
-    def memo(self):
-        """Return tx memo."""
-        return self._tx_response.get("tx").get("body").get("memo")
-
-    @property
+    @lru_cache(maxsize=None)
     def methods(self):
         """Return tx methods."""
         return list(self.message)
+
+    @property
+    @lru_cache(maxsize=None)
+    def message(self):
+        """Return tx methods."""
+        inputs = re.findall(self.message_pattern, self._data)[0]
+        message = json.loads(inputs)
+        return message
+
+
+class DataBase(dict):
+    """DataBase class."""
+
+    database = DATA_BASE
+
+    def __init__(self, *args, **kwargs):
+        """Build a DataBase."""
+        super().__init__(*args, **kwargs)
+        if self.database.exists():
+            with open(self.database, "rb") as database:
+                self.update(pickle.load(database))
+
+    def setdefault(self, *args):
+        """Override setdefault method."""
+        if args[0] in self:  # do not update database
+            return super().setdefault(*args)
+        result = super().setdefault(*args)
+        with open(self.database, "wb") as database:
+            pickle.dump(self, database)
+        return result

@@ -1,10 +1,12 @@
 """Project module."""
 
-from functools import cached_property
+from datetime import datetime
+from functools import _lru_cache_wrapper, lru_cache
 
-import numpy as np
+import pandas as pd
 
 from carbonix.models.explorer import Explorer
+from carbonix.resources import DATA_BASE
 
 
 class Project:
@@ -14,8 +16,34 @@ class Project:
         """Build a project."""
         self._address = address
         self._explorer = Explorer()
+        self._txs = self._explorer.txs(
+            self._address
+        )  # load txs from database if exists
+        self.check_update()
 
-    @cached_property
+    def check_update(self):
+        """Check if there are news txs then clear cache accordingly."""
+        txs = self._explorer.txs(self._address, force=True)
+        if len(txs) != len(self._txs):  # new txs
+            self.cache_clear(self)  # cleear Project cache
+            self.cache_clear(self._explorer)  # cleear Explorer cache
+            strftime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            backup_name = f"{DATA_BASE.stem}_{strftime}{DATA_BASE.suffix}"
+            DATA_BASE.rename(DATA_BASE.parent / backup_name)
+
+    @staticmethod
+    def cache_clear(instance):
+        """Clean cache of the specified instance."""
+        for method_name in dir(instance.__class__):
+            method = getattr(instance.__class__, method_name)
+            print(method_name, type(method))
+            if isinstance(method, property):
+                method.fget.cache_clear()
+            elif isinstance(method, _lru_cache_wrapper):
+                method.cache_clear()
+
+    @property
+    @lru_cache(maxsize=None)
     def address(self):
         """Return address.
 
@@ -29,12 +57,14 @@ class Project:
         """
         return self._address
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def mintscan(self):
         """Return mintscan url."""
         return f"https://www.mintscan.io/juno/wasm/contract/{self.address}"
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def price(self):
         """Return NFT price.
 
@@ -46,11 +76,14 @@ class Project:
             >>> print(project.price)
             9800000
         """
-        txn = self._explorer.price_txs(self.address)[-1]
+        txn = sorted(
+            self._explorer.price_txs(self.address), key=lambda txn: txn.height
+        )[-1]
         price = txn.message.get("update_price").get("price")
         return int(price.get("amount"))
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def unit(self):
         """Return NFT price.
 
@@ -62,11 +95,14 @@ class Project:
             >>> print(project.unit)
             ujuno
         """
-        txn = self._explorer.price_txs(self.address)[-1]
+        txn = sorted(
+            self._explorer.price_txs(self.address), key=lambda txn: txn.height
+        )[-1]
         price = txn.message.get("update_price").get("price")
         return price.get("denom")
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_market_supply(self):
         """Return total market supply.
 
@@ -78,10 +114,13 @@ class Project:
             >>> print(project.total_market_supply)
             160
         """
-        txn = self._explorer.supply_txs(self.address)[-1]
+        txn = sorted(
+            self._explorer.supply_txs(self.address), key=lambda txn: txn.height
+        )[-1]
         return int(txn.message.get("update_supply").get("market_supply"))
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_reserved_supply(self):
         """Return total reserved supply.
 
@@ -93,10 +132,13 @@ class Project:
             >>> print(project.total_reserved_supply)
             0
         """
-        txn = self._explorer.supply_txs(self.address)[-1]
+        txn = sorted(
+            self._explorer.supply_txs(self.address), key=lambda txn: txn.height
+        )[-1]
         return int(txn.message.get("update_supply").get("reserved_supply"))
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_whitelist_supply(self):
         """Return total whitelist supply.
 
@@ -110,7 +152,8 @@ class Project:
         """
         return sum(self.whitelists().values())
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_public_supply(self):
         """Reutn total public supply.
 
@@ -120,11 +163,12 @@ class Project:
             >>> address = next(iter(CONTRACT_ADDRESSES))
             >>> project = Project(address)
             >>> print(project.total_public_supply)
-            160
+            11
         """
         return self.total_market_supply - self.total_whitelist_supply
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_supply(self):
         """Reutn total supply.
 
@@ -138,7 +182,8 @@ class Project:
         """
         return self.total_market_supply + self.total_reserved_supply
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_market_minted(self):
         """Return total market minted.
 
@@ -154,7 +199,8 @@ class Project:
         price = self.price
         return sum(int(mint.get("amount") / price) for mint in mints.values())
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_reserved_minted(self):
         """Return total reserved minted.
 
@@ -168,7 +214,8 @@ class Project:
         """
         return self.total_reserved_supply  # FIXME: how to find reserved mints?
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_whitelist_minted(self):
         """Return total whitelist minted.
 
@@ -182,14 +229,15 @@ class Project:
         """
         mints = self.mints()
         price = self.price
-        sale_timestamp = self.sale_timestamp
+        sale_height = self.sale_height
         return sum(
             int(mint.get("amount") / price)
             for mint in mints.values()
-            if mint.get("timestamp") <= sale_timestamp
+            if mint.get("height") <= sale_height
         )
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_public_minted(self):
         """Reutn total public minted.
 
@@ -199,11 +247,12 @@ class Project:
             >>> address = next(iter(CONTRACT_ADDRESSES))
             >>> project = Project(address)
             >>> print(project.total_public_minted)
-            160
+            42
         """
         return self.total_market_minted - self.total_whitelist_minted
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def total_minted(self):
         """Reutn total minted.
 
@@ -217,7 +266,8 @@ class Project:
         """
         return self.total_market_minted + self.total_reserved_minted
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def max_buy_at_once(self):
         """Return max buy at once.
 
@@ -229,10 +279,13 @@ class Project:
             >>> print(project.max_buy_at_once)
             5
         """
-        txn = self._explorer.max_buy_txs(self.address)[-1]
+        txn = sorted(
+            self._explorer.max_buy_txs(self.address), key=lambda txn: txn.height
+        )[-1]
         return int(txn.message.get("max_buy_at_once"))
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def name(self):
         """Return project name.
 
@@ -244,11 +297,14 @@ class Project:
             >>> print(project.name)
             Banegas Farm
         """
-        txn = self._explorer.metadata_txs(self.address)[-1]
+        txn = sorted(
+            self._explorer.metadata_txs(self.address), key=lambda txn: txn.height
+        )[-1]
         metadata = txn.message.get("update_metadata").get("metadata")
         return metadata.get("name")
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def description(self):
         """Return project description.
 
@@ -260,11 +316,14 @@ class Project:
             >>> print(project.description)
             Invest in decarbonation through our Green DeFi Launchpad.
         """
-        txn = self._explorer.metadata_txs(self.address)[-1]
+        txn = sorted(
+            self._explorer.metadata_txs(self.address), key=lambda txn: txn.height
+        )[-1]
         metadata = txn.message.get("update_metadata").get("metadata")
         return metadata.get("description")
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def image(self):
         """Return project image.
 
@@ -276,11 +335,14 @@ class Project:
             >>> print(project.image)  # doctest: +ELLIPSIS
             https://firebasestorage.googleapis.com/...
         """
-        txn = self._explorer.metadata_txs(self.address)[-1]
+        txn = sorted(
+            self._explorer.metadata_txs(self.address), key=lambda txn: txn.height
+        )[-1]
         metadata = txn.message.get("update_metadata").get("metadata")
         return metadata.get("image")
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
     def presale_timestamp(self):
         """Return project presale timestamp.
 
@@ -296,9 +358,31 @@ class Project:
         enabled_txs = [
             txn for txn in txs if txn.message.get("pre_sell_mode").get("enable")
         ]
-        return enabled_txs[-1].timestamp
+        txn = sorted(enabled_txs, key=lambda txn: txn.height)[-1]
+        return txn.timestamp
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
+    def presale_height(self):
+        """Return project presale height.
+
+        Example:
+            >>> from carbonix.models.project import Project
+            >>> from carbonix.resources import CONTRACT_ADDRESSES
+            >>> address = next(iter(CONTRACT_ADDRESSES))
+            >>> project = Project(address)
+            >>> print(project.presale_height)
+            2976558
+        """
+        txs = self._explorer.pre_sell_mode_txs(self.address)
+        enabled_txs = [
+            txn for txn in txs if txn.message.get("pre_sell_mode").get("enable")
+        ]
+        txn = sorted(enabled_txs, key=lambda txn: txn.height)[-1]
+        return txn.height
+
+    @property
+    @lru_cache(maxsize=None)
     def sale_timestamp(self):
         """Return project sale timestamp.
 
@@ -312,9 +396,29 @@ class Project:
         """
         txs = self._explorer.sell_mode_txs(self.address)
         enabled_txs = [txn for txn in txs if txn.message.get("sell_mode").get("enable")]
-        return enabled_txs[-1].timestamp
+        txn = sorted(enabled_txs, key=lambda txn: txn.height)[-1]
+        return txn.timestamp
 
-    @cached_property
+    @property
+    @lru_cache(maxsize=None)
+    def sale_height(self):
+        """Return project sale height.
+
+        Example:
+            >>> from carbonix.models.project import Project
+            >>> from carbonix.resources import CONTRACT_ADDRESSES
+            >>> address = next(iter(CONTRACT_ADDRESSES))
+            >>> project = Project(address)
+            >>> print(project.sale_height)
+            2977724
+        """
+        txs = self._explorer.sell_mode_txs(self.address)
+        enabled_txs = [txn for txn in txs if txn.message.get("sell_mode").get("enable")]
+        txn = sorted(enabled_txs, key=lambda txn: txn.height)[-1]
+        return txn.height
+
+    @property
+    @lru_cache(maxsize=None)
     def height_timedelta(self):
         """Return estimated height time duration.
 
@@ -326,10 +430,11 @@ class Project:
             >>> print(project.height_timedelta)
             0 days 00:00:06
         """
-        txs = self._explorer.txs(self.address)
-        times, heights = zip(*[(txn.timestamp, txn.height) for txn in txs])
-        timedeltas = np.diff(np.unique(times)) / np.diff(np.unique(heights))
-        return np.median(timedeltas).round("1s")
+        # txs = self._explorer.txs(self.address)
+        # times, heights = zip(*[(txn.timestamp, txn.height) for txn in txs])
+        # timedeltas = np.diff(np.unique(times)) / np.diff(np.unique(heights))
+        # return np.median(timedeltas).round("1s")
+        return pd.Timedelta(seconds=6)
 
     @staticmethod
     def to_juno(value, unit):
@@ -357,6 +462,7 @@ class Project:
         """
         return f"{address[:7]}...{address[-6:]}"
 
+    @lru_cache(maxsize=None)
     def admins(self):
         """Return admins.
 
@@ -374,6 +480,7 @@ class Project:
         admins = {txn.message.get("add_admin").get("address") for txn in txs}
         return list(sorted(senders.union(admins)))
 
+    @lru_cache(maxsize=None)
     def whitelists(self):
         """Return whitelist addresses.
 
@@ -392,17 +499,22 @@ class Project:
             149
         """
         admin_addresses = self.admins()
-        presale_timestamp = self.presale_timestamp
+        presale_height = self.presale_height
+        txs = sorted(
+            self._explorer.whitelist_txs(self.address), key=lambda txn: txn.hash
+        )
+        txs = sorted(txs, key=lambda txn: txn.height)
         return {
             entry.get("address"): int(entry.get("nb_slots"))
-            for txn in self._explorer.whitelist_txs(self.address)
+            for txn in txs
             for entry in txn.message.get("add_to_whitelist").get("entries")
-            if txn.timestamp <= presale_timestamp  # focus before the pre sale
+            if txn.height <= presale_height  # focus before the pre sale
             # FIXME: some users get 2 addresses because of ledger issue
             and len(txn.message.get("add_to_whitelist").get("entries")) > 1
             and entry.get("address") not in admin_addresses  # remove admins
         }
 
+    @lru_cache(maxsize=None)
     def mints(self):
         """Return mint event txs.
 
@@ -420,7 +532,8 @@ class Project:
              'height': 2976560,
              'timestamp': Timestamp('2022-05-06 12:59:22+0000', tz='UTC')}
         """
-        txs = self._explorer.mint_txs(self.address)
+        txs = sorted(self._explorer.mint_txs(self.address), key=lambda txn: txn.hash)
+        txs = sorted(txs, key=lambda txn: txn.height)
         mints = {
             txn.hash: dict(
                 height=txn.height,

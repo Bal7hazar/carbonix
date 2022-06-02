@@ -22,12 +22,14 @@ class DashboardController:
         projects = [Project(address) for address in CONTRACT_ADDRESSES]
         self.projects = {project.name: project for project in projects}
         self.view = Dashboard(self)
-        self.update_view(next(iter(self.projects.values())))
+        for project in reversed(projects):  # load project data and cache
+            self.update_view(project)
         self.view.show()
 
     def update_view(self, project):
         """Update the whole view."""
         if project:
+            project.check_update()
             self.update_contract(project)
             self.update_distribution(project)
             self.update_sale(project)
