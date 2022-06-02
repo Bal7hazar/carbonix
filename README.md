@@ -1,2 +1,2 @@
-# carbonable-analytics
+# carbonix
 CarbonABLE analytics web app
