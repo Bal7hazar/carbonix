@@ -100,12 +100,12 @@ class DashboardController:
     def update_distribution(self, project):
         """Update distribution view of the project."""
         # data
-        mints = project.mints()
+        txs = project.mints()
         price = project.price
         tokens = dict()
-        for _, tx_info in mints.items():
-            address = tx_info.get("address")
-            token = tx_info.get("amount") / price
+        for txn in txs:
+            address = txn.sender
+            token = txn.amount / price
             tokens[address] = tokens.get(address, 0) + token
         unique_count = len(tokens)
         data = pd.DataFrame.from_dict(
@@ -167,11 +167,19 @@ class DashboardController:
     def update_sale(self, project):
         """Update sale view of the project."""
         # data
-        mints = project.mints()
+        txs = project.mints()
         price = project.price
         sale_timestamp = project.sale_timestamp
         presale_timestamp = project.presale_timestamp
-        last_timestamp = list(mints.values())[-1].get("timestamp")
+        last_timestamp = txs[-1].timestamp
+        mints = {
+            txn.hash: dict(
+                timestamp=txn.timestamp,
+                height=txn.height,
+                amount=txn.amount,
+            )
+            for txn in txs
+        }
         data = pd.DataFrame.from_dict(mints, orient="index")
         data["mint"] = data.amount.div(price)
         data["cumulative"] = data.mint.cumsum()

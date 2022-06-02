@@ -392,8 +392,12 @@ class Txn:
         command = "block"
         height = f"height={self.height}"
         api = f"{Explorer.base}/{command}?{height}"
-        response = self.__database.setdefault(api, requests.get(api).json())
-        return response.get("result").get("block").get("header").get("time")
+        return self.__database.setdefault(
+            api,
+            pd.Timestamp(
+                requests.get(api).json().get("result").get("block").get("header").get("time")
+            ).round(freq="S")
+        )
 
     @property
     @lru_cache(maxsize=None)
@@ -411,7 +415,7 @@ class Txn:
     @lru_cache(maxsize=None)
     def timestamp(self):
         """Return timestamp."""
-        return pd.Timestamp(self._timestamp()).round(freq="S")
+        return self._timestamp()
 
     @property
     @lru_cache(maxsize=None)

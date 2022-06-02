@@ -195,9 +195,9 @@ class Project:
             >>> print(project.total_market_minted)
             160
         """
-        mints = self.mints()
+        txs = self.mints()
         price = self.price
-        return sum(int(mint.get("amount") / price) for mint in mints.values())
+        return sum(int(txn.amount / price) for txn in txs)
 
     @property
     @lru_cache(maxsize=None)
@@ -227,13 +227,13 @@ class Project:
             >>> print(project.total_whitelist_minted)
             118
         """
-        mints = self.mints()
+        txs = self.mints()
         price = self.price
         sale_height = self.sale_height
         return sum(
-            int(mint.get("amount") / price)
-            for mint in mints.values()
-            if mint.get("height") <= sale_height
+            int(txn.amount / price)
+            for txn in txs
+            if txn.height <= sale_height
         )
 
     @property
@@ -490,28 +490,18 @@ class Project:
             >>> address = next(iter(CONTRACT_ADDRESSES))
             >>> project = Project(address)
             >>> whitelists = project.whitelists()
-            >>> address, slot = list(whitelists.items())[0]
-            >>> print(f"{address}: {slot}")
-            juno1h4...2avzr5: 5
             >>> print(len(whitelists))
             53
             >>> print(sum(whitelists.values()))
             149
         """
-        admin_addresses = self.admins()
         presale_height = self.presale_height
-        txs = sorted(
-            self._explorer.whitelist_txs(self.address), key=lambda txn: txn.hash
-        )
-        txs = sorted(txs, key=lambda txn: txn.height)
         return {
             entry.get("address"): int(entry.get("nb_slots"))
-            for txn in txs
-            for entry in txn.message.get("add_to_whitelist").get("entries")
-            if txn.height <= presale_height  # focus before the pre sale
-            # FIXME: some users get 2 addresses because of ledger issue
+            for txn in self._explorer.whitelist_txs(self.address)
+            if txn.height <= presale_height
             and len(txn.message.get("add_to_whitelist").get("entries")) > 1
-            and entry.get("address") not in admin_addresses  # remove admins
+            for entry in txn.message.get("add_to_whitelist").get("entries")
         }
 
     @lru_cache(maxsize=None)
@@ -519,28 +509,13 @@ class Project:
         """Return mint event txs.
 
         Example:
-            >>> from pprint import pprint
             >>> from carbonix.models.project import Project
             >>> from carbonix.resources import CONTRACT_ADDRESSES
             >>> address = next(iter(CONTRACT_ADDRESSES))
             >>> project = Project(address)
-            >>> mints = project.mints()
-            >>> hash, txn = list(mints.items())[0]
-            >>> pprint(txn)
-            {'address': 'juno1lt0q0pdza2zcalm75fru5v9528w6gu0wmr3ke7',
-             'amount': 49000000,
-             'height': 2976560,
-             'timestamp': Timestamp('2022-05-06 12:59:22+0000', tz='UTC')}
+            >>> txs = project.mints()
+            >>> print(txs[0].sender)
+            juno1lt0q0pdza2zcalm75fru5v9528w6gu0wmr3ke7
         """
         txs = sorted(self._explorer.mint_txs(self.address), key=lambda txn: txn.hash)
-        txs = sorted(txs, key=lambda txn: txn.height)
-        mints = {
-            txn.hash: dict(
-                height=txn.height,
-                timestamp=txn.timestamp,
-                address=txn.sender,
-                amount=txn.amount,
-            )
-            for txn in txs
-        }
-        return mints
+        return sorted(txs, key=lambda txn: txn.height)
