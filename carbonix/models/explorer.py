@@ -395,8 +395,13 @@ class Txn:
         return self.__database.setdefault(
             api,
             pd.Timestamp(
-                requests.get(api).json().get("result").get("block").get("header").get("time")
-            ).round(freq="S")
+                requests.get(api)
+                .json()
+                .get("result")
+                .get("block")
+                .get("header")
+                .get("time")
+            ).round(freq="S"),
         )
 
     @property

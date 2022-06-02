@@ -20,6 +20,7 @@ class Project:
             self._address
         )  # load txs from database if exists
         self.check_update()
+        self.evaluation()
 
     def check_update(self):
         """Check if there are news txs then clear cache accordingly."""
@@ -41,6 +42,13 @@ class Project:
                 method.fget.cache_clear()
             elif isinstance(method, _lru_cache_wrapper):
                 method.cache_clear()
+
+    def evaluation(self):
+        """Evaluate all cached methods."""
+        for method_name in dir(self.__class__):
+            method = getattr(self, method_name)
+            if isinstance(method, _lru_cache_wrapper):
+                _ = method()
 
     @property
     @lru_cache(maxsize=None)
@@ -230,11 +238,7 @@ class Project:
         txs = self.mints()
         price = self.price
         sale_height = self.sale_height
-        return sum(
-            int(txn.amount / price)
-            for txn in txs
-            if txn.height <= sale_height
-        )
+        return sum(int(txn.amount / price) for txn in txs if txn.height <= sale_height)
 
     @property
     @lru_cache(maxsize=None)

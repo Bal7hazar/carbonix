@@ -1,5 +1,7 @@
 """Dashboard controller module."""
 
+import pickle
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -19,12 +21,24 @@ class DashboardController:
 
     def __init__(self) -> None:
         """Build a dashboard controller."""
-        projects = [Project(address) for address in CONTRACT_ADDRESSES]
+        projects = [self.load_project(address) for address in CONTRACT_ADDRESSES]
         self.projects = {project.name: project for project in projects}
         self.view = Dashboard(self)
-        for project in reversed(projects):  # load project data and cache
-            self.update_view(project)
+        self.update_view(projects[0])
         self.view.show()
+
+    @staticmethod
+    def load_project(address):
+        """Load project."""
+        path = (RESOURCES_PATH / address).with_suffix(".pickle")
+        if not path.exists():
+            project = Project(address)
+            with open(path.as_posix(), "wb") as pickle_file:
+                pickle.dump(project, pickle_file)
+            return project
+
+        with open(path.as_posix(), "rb") as pickle_file:
+            return pickle.load(pickle_file)
 
     def update_view(self, project):
         """Update the whole view."""
@@ -264,6 +278,6 @@ class DashboardController:
         # update view
         self.view.sale.histogram_figure = fig
 
-    def run(self, debug=False):
+    def run(self, debug=True):
         """Run application."""
         self.view.run_server(debug=debug)
