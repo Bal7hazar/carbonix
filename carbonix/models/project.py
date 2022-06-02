@@ -341,7 +341,7 @@ class Project:
             >>> print(project.total_minted)
             160
         """
-        self.__total_minted
+        return self.__total_minted
 
     def _total_minted(self):
         """Return total minted."""
