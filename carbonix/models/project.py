@@ -44,15 +44,13 @@ class Project:
         self.__total_minted = self._total_minted()
 
         # update features
-        self._txs = self._explorer.txs(
-            self._address
-        )  # load txs from database if exists
         self.check_update()
 
     def check_update(self):
         """Check if there are news txs then clear cache accordingly."""
-        txs = self._explorer.txs(self._address, force=True)
-        if len(txs) != len(self._txs):  # new txs
+        txs = self._explorer.txs(self._address, force=False)
+        force_txs = self._explorer.txs(self._address, force=True)
+        if len(txs) != len(force_txs):  # new txs
             self.cache_clear(self._explorer)  # cleear Explorer cache
             strftime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             backup_name = f"{DATA_BASE.stem}_{strftime}{DATA_BASE.suffix}"
