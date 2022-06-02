@@ -6,4 +6,6 @@ from carbonix.controllers.dashboard_controller import DashboardController
 
 controller = DashboardController()
 server = controller.view.server
-controller.run()
+
+if __name__ == "__main__":
+    controller.run()
