@@ -256,6 +256,6 @@ class DashboardController:
         # update view
         self.view.sale.histogram_figure = fig
 
-    def run(self):
+    def run(self, debug=True):
         """Run application."""
-        self.view.run_server(debug=True)
+        self.view.run_server(debug=debug)
