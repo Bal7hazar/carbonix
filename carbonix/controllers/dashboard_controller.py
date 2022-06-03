@@ -19,12 +19,13 @@ class DashboardController:
 
     pyvis_template_path = (RESOURCES_PATH / "pyvis_template.html").as_posix()
 
-    def __init__(self) -> None:
+    def __init__(self, name) -> None:
         """Build a dashboard controller."""
         projects = [self.load_project(address) for address in CONTRACT_ADDRESSES]
         self.projects = {project.name: project for project in projects}
-        self.view = Dashboard(self)
-        self.update_view(projects[0])
+        self.view = Dashboard(self, name)
+        for project in reversed(projects):
+            self.update_view(project)
         self.view.show()
 
     @staticmethod
@@ -186,6 +187,7 @@ class DashboardController:
         sale_timestamp = project.sale_timestamp
         presale_timestamp = project.presale_timestamp
         last_timestamp = txs[-1].timestamp
+
         mints = {
             txn.hash: dict(
                 timestamp=txn.timestamp,
@@ -194,6 +196,7 @@ class DashboardController:
             )
             for txn in txs
         }
+        
         data = pd.DataFrame.from_dict(mints, orient="index")
         data["mint"] = data.amount.div(price)
         data["cumulative"] = data.mint.cumsum()
