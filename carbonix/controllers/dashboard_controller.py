@@ -85,7 +85,7 @@ class DashboardController:
             hoverinfo="label+percent",
             textinfo="value",
             textfont_size=20,
-            marker=dict(colors=colors, line=dict(color="#000000", width=2)),
+            marker=dict(colors=colors, line=dict(color="black", width=2)),
         )
         fig.update_layout(PIECHART_LAYOUT)
         self.view.contract.supply_figure = fig
@@ -107,7 +107,7 @@ class DashboardController:
             hoverinfo="label+percent",
             textinfo="value",
             textfont_size=20,
-            marker=dict(colors=colors, line=dict(color="#000000", width=2)),
+            marker=dict(colors=colors, line=dict(color="black", width=2)),
         )
         fig.update_layout(PIECHART_LAYOUT)
         self.view.contract.minted_figure = fig
@@ -256,13 +256,9 @@ class DashboardController:
 
         # update layout
         layout = HISTOGRAM_LAYOUT.copy()
-        layout.update(
-            {
-                "bargap": 0.1,
-            }
-        )
+        layout.update({"bargap": 0.})
         fig.update_layout(layout)
-        fig.update_traces(marker={"line": {"color": "black", "width": 2}})
+        fig.update_traces(marker={"line": {"color": "black", "width": 1}})
         time_offset = pd.Timedelta(minutes=5)
         fig.update_xaxes(
             range=[presale_timestamp - time_offset, last_timestamp + time_offset],
