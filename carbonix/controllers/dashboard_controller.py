@@ -162,7 +162,7 @@ class DashboardController:
 
         # network
         network = Network(
-            height="650px", width="100%", font_color="white", bgcolor="rgba(0,0,0,0)"
+            height="430px", width="100%", font_color="white", bgcolor="rgba(0,0,0,0)"
         )
         network.path = self.pyvis_template_path
         for address in tokens:
@@ -196,7 +196,7 @@ class DashboardController:
             )
             for txn in txs
         }
-        
+
         data = pd.DataFrame.from_dict(mints, orient="index")
         data["mint"] = data.amount.div(price)
         data["cumulative"] = data.mint.cumsum()

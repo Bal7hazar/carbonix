@@ -36,7 +36,7 @@ class Contract(Section):
     @property
     def name(self):
         """Return name."""
-        return f"- `Name: {self._name}`"
+        return html.P(f"Name: {self._name}", id="contract-name")
 
     @name.setter
     def name(self, name):
@@ -45,7 +45,7 @@ class Contract(Section):
     @property
     def description(self):
         """Return description."""
-        return f"- `Description: {self._description}`"
+        return html.P(f"Description: {self._description}", id="contract-description")
 
     @description.setter
     def description(self, description):
@@ -54,9 +54,14 @@ class Contract(Section):
     @property
     def address(self):
         """Return address."""
-        if self._address:
-            return f"- `Contract: `[`{self._address}`]({self.mintscan})"
-        return f"- `Contract: {self._address}`"
+        href = self.mintscan if self._address else "#"
+        return html.P(
+            children=[
+                "Contract: ",
+                html.A(self._address, href=href),
+            ],
+            id="contract-address"
+        )
 
     @address.setter
     def address(self, address):
@@ -75,8 +80,8 @@ class Contract(Section):
     def price(self):
         """Return price."""
         if self._price:
-            return f"- `Price: {self._price} ${self.unit}`"
-        return f"- `Price: {self._price}`"
+            return html.P(f"Price: {self._price} ${self.unit}", id="contract-price")
+        return html.P(f"Price: {self._price}", id="contract-price")
 
     @price.setter
     def price(self, price):
@@ -94,7 +99,7 @@ class Contract(Section):
     @property
     def total_supply(self):
         """Return total supply."""
-        return f"- `Total supply: {self._total_supply}`"
+        return html.P(f"Total supply: {self._total_supply}", id="contract-total_supply")
 
     @total_supply.setter
     def total_supply(self, total_supply):
@@ -103,7 +108,7 @@ class Contract(Section):
     @property
     def total_market_supply(self):
         """Return total market supply."""
-        return f"- `Total market supply: {self._total_market_supply}`"
+        return html.P(f"Total market supply: {self._total_market_supply}", id="contract-total_market_supply")
 
     @total_market_supply.setter
     def total_market_supply(self, total_market_supply):
@@ -112,7 +117,7 @@ class Contract(Section):
     @property
     def total_reserved_supply(self):
         """Return total reserved supply."""
-        return f"- `Total reserved supply: {self._total_reserved_supply}`"
+        return html.P(f"Total reserved supply: {self._total_reserved_supply}", id="contract-total_reserved_supply")
 
     @total_reserved_supply.setter
     def total_reserved_supply(self, total_reserved_supply):
@@ -121,7 +126,7 @@ class Contract(Section):
     @property
     def total_minted(self):
         """Return total minted."""
-        return f"- `Total minted: {self._total_minted}`"
+        return html.P(f"Total minted: {self._total_minted}", id="contract-total_minted")
 
     @total_minted.setter
     def total_minted(self, total_minted):
@@ -130,7 +135,7 @@ class Contract(Section):
     @property
     def total_market_minted(self):
         """Return total market minted."""
-        return f"- `Total market minted: {self._total_market_minted}`"
+        return html.P(f"Total market minted: {self._total_market_minted}", id="contract-total_market_minted")
 
     @total_market_minted.setter
     def total_market_minted(self, total_market_minted):
@@ -139,7 +144,7 @@ class Contract(Section):
     @property
     def total_reserved_minted(self):
         """Return total reserved minted."""
-        return f"- `Total reserved minted: {self._total_reserved_minted}`"
+        return html.P(f"Total reserved minted: {self._total_reserved_minted}", id="contract-total_reserved_minted")
 
     @total_reserved_minted.setter
     def total_reserved_minted(self, total_reserved_minted):
@@ -148,7 +153,7 @@ class Contract(Section):
     @property
     def max_buy_at_once(self):
         """Return max buy at once."""
-        return f"- `Max buy at once: {self._max_buy_at_once}`"
+        return html.P(f"Max buy at once: {self._max_buy_at_once}", id="contract-max_buy_at_once")
 
     @max_buy_at_once.setter
     def max_buy_at_once(self, max_buy_at_once):
@@ -176,18 +181,14 @@ class Contract(Section):
         """Return header."""
         return html.Div(
             children=[
-                html.H3(
-                    children="CONTRACT",
-                    style={"textAlign": "left"},
-                ),
-                html.Hr(className="section-underline"),
+                html.H3("Contract", className="section-title"),
                 html.Div(
                     id="contract-content",
+                    className="topic-container",
                     children=self.children(),
-                    style={"display": "flex"},
                 ),
             ],
-            className="section",
+            className="section-container",
         )
 
     def children(self):
@@ -200,41 +201,43 @@ class Contract(Section):
 
     def metrics(self):
         """Return contract information."""
-        children = [
-            html.H5(children=self.linear_gradian_spans("MetriX")),
-            html.Hr(className="topic-underline"),
-            dcc.Markdown(self.name, id="contract-name"),
-            dcc.Markdown(self.description, id="contract-description"),
-            dcc.Markdown(self.address, id="contract-address"),
-            dcc.Markdown(self.price, id="contract-price"),
-            dcc.Markdown(self.total_supply, id="contract-total_supply"),
-            dcc.Markdown(self.total_market_supply, id="contract-total_market_supply"),
-            dcc.Markdown(
-                self.total_reserved_supply, id="contract-total_reserved_supply"
-            ),
-            dcc.Markdown(self.total_minted, id="contract-total_minted"),
-            dcc.Markdown(self.total_market_minted, id="contract-total_market_minted"),
-            dcc.Markdown(
-                self.total_reserved_minted, id="contract-total_reserved_minted"
-            ),
-            dcc.Markdown(self.max_buy_at_once, id="contract-max_buy_at_once"),
+        infos = [
+            self.name,
+            self.description,
+            self.address,
+            self.price,
+            self.total_supply,
+            self.total_market_supply,
+            self.total_reserved_supply,
+            self.total_minted,
+            self.total_market_minted,
+            self.total_reserved_minted,
+            self.max_buy_at_once,
         ]
-        return html.Div(children=children, className="topic", style={"width": "30%"})
+        children = [
+            html.H4("MetriX", className="topic-title rainbow"),
+            html.Ul(
+                children=[
+                    html.Li(info, className="metrics-item")
+                    for info in infos
+                ],
+                className="metrics-container",
+            )
+        ]
+        return html.Div(children=children, className="topic")
 
     def supply(self):
         """Return contract supply."""
         children = [
-            html.H5("Total supply"),
-            html.Hr(className="topic-underline"),
+            html.H4("Total supply", className="topic-title"),
             dcc.Graph(id="contract-supply_figure", figure=self.supply_figure),
         ]
-        return html.Div(children=children, className="topic", style={"width": "35%"})
+        return html.Div(children=children, className="topic", id="contract-supply-figure")
 
     def minted(self):
         """Return contract minted."""
         children = [
-            html.H5("Total minted"),
-            html.Hr(className="topic-underline"),
+            html.H4("Total minted", className="topic-title"),
             dcc.Graph(id="contract-minted_figure", figure=self.minted_figure),
         ]
-        return html.Div(children=children, className="topic", style={"width": "35%"})
+        return html.Div(children=children, className="topic", id="contract-minted-figure")

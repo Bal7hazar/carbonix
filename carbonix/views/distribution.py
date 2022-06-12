@@ -26,7 +26,7 @@ class Distribution(Section):
     @property
     def unique(self):
         """Return unique."""
-        return f"- `Unique addresses: {self._unique}`"
+        return html.P(f"Unique addresses: {self._unique}", id="distribution-unique")
 
     @unique.setter
     def unique(self, unique):
@@ -35,7 +35,7 @@ class Distribution(Section):
     @property
     def mean(self):
         """Return mean."""
-        return f"- `Mean: {self._mean}`"
+        return html.P(f"Mean: {self._mean}", id="distribution-mean")
 
     @mean.setter
     def mean(self, mean):
@@ -44,7 +44,7 @@ class Distribution(Section):
     @property
     def median(self):
         """Return median."""
-        return f"- `Median: {self._median}`"
+        return html.P(f"Median: {self._median}", id="distribution-median")
 
     @median.setter
     def median(self, median):
@@ -72,68 +72,57 @@ class Distribution(Section):
         """Return section."""
         return html.Div(
             children=[
-                html.H3(
-                    children="DISTRIBUTION",
-                    style={"textAlign": "left"},
-                ),
-                html.Hr(className="section-underline"),
+                html.H3("Distribution", className="section-title"),
                 html.Div(
-                    id="distribution-content",
+                    id="distribution-container",
+                    className="topic-container",
                     children=self.children(),
-                    style={"display": "flex"},
                 ),
             ],
-            className="section",
+            className="section-container",
         )
 
     def children(self):
         """Return children."""
         return [
-            html.Div(
-                children=[self.metrics(), self.histogram()],
-                style={"width": "50%"},
-            ),
+            self.metrics(),
+            self.histogram(),
             self.network(),
         ]
 
     def metrics(self):
         """Return metrics."""
+        infos = [self.unique, self.mean, self.median,]
         children = [
-            html.H5(children=self.linear_gradian_spans("MetriX")),
-            html.Hr(className="topic-underline"),
-            dcc.Markdown(self.unique, id="distribution-unique"),
-            dcc.Markdown(self.mean, id="distribution-mean"),
-            dcc.Markdown(self.median, id="distribution-median"),
+            html.H4("MetriX", className="topic-title rainbow"),
+            html.Ul(
+                children=[
+                    html.Li(info, className="metrics-item")
+                    for info in infos
+                ],
+                className="metrics-container",
+            )
         ]
-        return html.Div(
-            children=children,
-            className="topic",
-        )
+        return html.Div(children=children, className="topic", id="distirbution-metrics")
 
     def histogram(self):
         """Return histogram of distribution."""
         children = [
-            html.H5("Minters"),
-            html.Hr(className="topic-underline"),
+            html.H4("Minters", className="topic-title"),
             dcc.Graph(
                 id="distribution-histogram_figure",
                 figure=self.histogram_figure,
             ),
         ]
-        return html.Div(
-            children=children,
-            className="topic",
-        )
+        return html.Div(children=children, className="topic", id="distribution-histogram-figure")
 
     def network(self):
         """Return network of distribution."""
         children = [
-            html.H5("Network"),
-            html.Hr(className="topic-underline"),
+            html.H4("Network", className="topic-title"),
             html.Iframe(
                 srcDoc=self.network_figure,
                 id="distribution-network_figure",
-                style={"border": "none", "width": "100%", "height": "100%"},
             ),
         ]
-        return html.Div(children=children, className="topic", style={"width": "50%"})
+        return html.Div(children=children, className="topic", id="distribution-network-figure")

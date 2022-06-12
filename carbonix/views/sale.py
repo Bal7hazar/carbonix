@@ -26,7 +26,7 @@ class Sale(Section):
     @property
     def total_presale_mint(self):
         """Return total presale mint events."""
-        return f"- `Total presale mint events: {self._total_presale_mint}`"
+        return html.P(f"Total presale mint events: {self._total_presale_mint}", id="sale-total_presale_mint")
 
     @total_presale_mint.setter
     def total_presale_mint(self, total_presale_mint):
@@ -35,7 +35,7 @@ class Sale(Section):
     @property
     def total_public_mint(self):
         """Return total public mint events."""
-        return f"- `Total public sale mint events: {self._total_public_mint}`"
+        return html.P(f"Total public sale mint events: {self._total_public_mint}", id="sale-total_public_mint")
 
     @total_public_mint.setter
     def total_public_mint(self, total_public_mint):
@@ -44,7 +44,7 @@ class Sale(Section):
     @property
     def public_duration(self):
         """Return public sale duration."""
-        return f"- `Public sale sold out duration: {self._public_duration}`"
+        return html.P(f"Public sale sold out duration: {self._public_duration}", id="sale-public_duration")
 
     @public_duration.setter
     def public_duration(self, public_duration):
@@ -53,7 +53,7 @@ class Sale(Section):
     @property
     def public_height(self):
         """Return public sale height."""
-        return f"- `Public sale sold out over {self._public_height} heights`"
+        return html.P(f"Public sale sold out over {self._public_height} heights", id="sale-public_height")
 
     @public_height.setter
     def public_height(self, public_height):
@@ -72,18 +72,14 @@ class Sale(Section):
         """Return section."""
         return html.Div(
             children=[
-                html.H3(
-                    children="SALE",
-                    style={"textAlign": "left"},
-                ),
-                html.Hr(className="section-underline"),
+                html.H3("Sale", className="section-title"),
                 html.Div(
                     id="sale-content",
+                    className="topic-container",
                     children=self.children(),
-                    style={"display": "flex"},
                 ),
             ],
-            className="section",
+            className="section-container",
         )
 
     def children(self):
@@ -95,24 +91,28 @@ class Sale(Section):
 
     def metrics(self):
         """Return metrics."""
-        children = [
-            html.H5(children=self.linear_gradian_spans("MetriX")),
-            html.Hr(className="topic-underline"),
-            dcc.Markdown(self.total_presale_mint, id="sale-total_presale_mint"),
-            dcc.Markdown(self.total_public_mint, id="sale-total_public_mint"),
-            dcc.Markdown(self.public_duration, id="sale-public_duration"),
-            dcc.Markdown(self.public_height, id="sale-public_height"),
+        infos = [
+            self.total_presale_mint,
+            self.total_public_mint,
+            self.public_duration,
+            self.public_height,
         ]
-        return html.Div(
-            children=children,
-            className="topic",
-        )
+        children = [
+            html.H4("MetriX", className="topic-title rainbow"),
+            html.Ul(
+                children=[
+                    html.Li(info, className="metrics-item")
+                    for info in infos
+                ],
+                className="metrics-container",
+            )
+        ]
+        return html.Div(children=children, className="topic")
 
     def histogram(self):
         """Return historgram of sales event."""
         children = [
-            html.H5("Mint events"),
-            html.Hr(className="topic-underline"),
+            html.H4("Mint events", className="topic-title"),
             dcc.Graph(id="sale-histogram_figure", figure=self.histogram_figure),
         ]
-        return html.Div(children=children, className="topic", style={"width": "100%"})
+        return html.Div(children=children, className="topic", id="sale-histogram-figure")

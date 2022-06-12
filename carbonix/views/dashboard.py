@@ -1,6 +1,5 @@
 """Dashboard view module."""
 
-from colour import Color
 from dash import Dash, Input, Output, dcc, html
 
 from carbonix.views.contract import Contract
@@ -11,8 +10,10 @@ from carbonix.views.sale import Sale
 class Dashboard(Dash):
     """Dashboard class."""
 
-    purple = Color("#A048FE")
-    green = Color("#83DA90")
+    donation_addresses = [
+        "tips.bal7hazar.eth",
+        "0x4Ae827EcDB6Bc203846d904c3F7Dac0F72602d53",
+    ]
 
     def __init__(self, controller, *args, **kwargs):
         """Build a dashboard."""
@@ -28,13 +29,12 @@ class Dashboard(Dash):
         """Set up layout."""
         self.title = "Carbonix"
         self.layout = html.Div(
+            className="body",
             children=[
                 self.header(),
-                self.project(),
-                self.contract.section(),
-                self.distribution.section(),
-                self.sale.section(),
-            ]
+                self.main(),
+                self.footer(),
+            ],
         )
         self.setup_callbacks()
 
@@ -116,38 +116,92 @@ class Dashboard(Dash):
         )(self.update)
 
     def header(self):
-        """Return title view."""
+        """Return header markup."""
         title = "CarboniX"
-        colors = [color.hex_l for color in self.purple.range_to(self.green, len(title))]
-        return html.Div(
+        suffix = "A carbonABLE analytics story"
+        project_names = list(self._controller.projects)
+        return html.Header(
+            className="header",
             children=[
                 html.H1(
-                    children=[
-                        html.Span(letter, style={"color": f"{color}"})
-                        for letter, color in zip(title, colors)
-                    ],
-                    style={
-                        "textAlign": "center",
-                        "margin-top": "50px",
-                    },
+                    children=title,
+                    className="header-title rainbow",
                 ),
-                html.H6("A carbonABLE analytics story", style={"textAlign": "center"}),
-            ]
+                html.Div(
+                    children=dcc.Dropdown(
+                        options=project_names,
+                        value=project_names[0],
+                        id="projects-dropdown",
+                        className="header-projects",
+                    ),
+                    className="dropdown-container",
+                )
+            ],
         )
 
-    def project(self):
-        """Return project selection view."""
-        project_names = list(self._controller.projects)
-        return html.Div(
+    def main(self):
+        """Return main markup."""
+        return html.Main(
+            className="main",
             children=[
-                dcc.Dropdown(
-                    options=project_names,
-                    value=project_names[0],
-                    id="projects-dropdown",
-                    className="dropdown-menu-center",
+                self.contract.section(),
+                self.distribution.section(),
+                self.sale.section(),
+            ],
+        )
+
+    def footer(self):
+        """Return footer markup."""
+        donation_content = (
+            "This dashboard relies on donations, your support is welcome:"
+        )
+        links = dict(
+            github=("https://github.com/Bal7hazar/carbonix", "./assets/images/github.svg"),
+            carbonable=("https://carbonable.io", "https://media-exp1.licdn.com/dms/image/C4E0BAQHEBIyofLboAw/company-logo_200_200/0/1626797273186?e=2147483647&v=beta&t=oZD83CvpjbnISmIHklklRHUY26GvUtORBFaTUHA43Cc"),
+            twitter=("https://twitter.com/Carbonable_io", "./assets/images/twitter.svg"),
+            discord=("https://discord.gg/zUy9UvB7cd", "./assets/images/discord.svg"),
+            linkedin=("https://fr.linkedin.com/company/carbonable", "./assets/images/linkedin.svg"),
+            medium=("https://carbonable.medium.com/", "./assets/images/medium.svg"),
+        )
+        return html.Footer(
+            className="footer",
+            children=[
+                html.Div(
+                    className="footer-donation",
+                    children=[
+                        html.P(
+                            donation_content,
+                            className="footer-donation-content",
+                        ),
+                        html.Ul(
+                            className="footer-donation-addresses",
+                            children=[
+                                html.Li(address, className="footer-donation-address")
+                                for address in self.donation_addresses
+                            ],
+                        ),
+                    ],
+                ),
+                html.Ul(
+                    className="footer-links",
+                    children=[
+                        html.Li(
+                            children=[
+                                html.A(
+                                    html.Img(
+                                        src=logo,
+                                        alt=platform,
+                                        className="logo-brand",
+                                    ),
+                                    href=link,
+                                )
+                            ],
+                            className="footer-link",
+                        )
+                        for platform, (link, logo) in links.items()
+                    ],
                 ),
             ],
-            style={"margin": "0% 40% 0% 40%"},
         )
 
     def update(self, project_name):

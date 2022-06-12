@@ -45,7 +45,10 @@ class Explorer:
 
         if force:  # force the request what ever the database content
             return deepcopy(requests.get(api).json())
-        return deepcopy(self.__database.get(api) or self.__database.setdefault(api, requests.get(api).json()))
+        return deepcopy(
+            self.__database.get(api)
+            or self.__database.setdefault(api, requests.get(api).json())
+        )
 
     def txs(self, address, force=False):
         """Return txs executed by the specified address.
@@ -401,7 +404,8 @@ class Txn:
                 .get("block")
                 .get("header")
                 .get("time")
-            ).round(freq="S") + "a",
+            ).round(freq="S")
+            + "a",
         )
 
     @property
