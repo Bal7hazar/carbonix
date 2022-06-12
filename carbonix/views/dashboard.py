@@ -14,6 +14,7 @@ class Dashboard(Dash):
         "tips.bal7hazar.eth",
         "0x4Ae827EcDB6Bc203846d904c3F7Dac0F72602d53",
     ]
+    fps = 1
 
     def __init__(self, controller, *args, **kwargs):
         """Build a dashboard."""
@@ -34,6 +35,11 @@ class Dashboard(Dash):
                 self.header(),
                 self.main(),
                 self.footer(),
+                dcc.Interval(
+                    id="interval-component",
+                    interval=1000 / self.fps,
+                    n_intervals=0,
+                )
             ],
         )
         self.setup_callbacks()
