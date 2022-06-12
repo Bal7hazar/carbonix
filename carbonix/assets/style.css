@@ -1,0 +1,204 @@
+/* Imports */
+
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu&family=Ubuntu+Mono&display=swap');
+
+/* Base */
+
+a {
+    color: #1EAEDB;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+a:hover {
+    color: #0FA0CE;
+}
+
+/* Class */
+
+.body {
+    padding: 50px 50px 25px 50px;
+    background-color: #1E2130;
+    color: #FFF;
+    font-family: "Open Sans", sans-serif;
+}
+
+.rainbow {
+    display: inline-block; 
+    background-image: linear-gradient(90deg, #A048FE, #83DA90);
+    background-size: 100%;
+    background-repeat: repeat;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; 
+}
+
+.logo-brand {
+    width: 32px;
+    height: 32px;
+    margin: 5px;
+    padding: 3px;
+    border-radius: 5px;
+    background-color: #FFF;
+}
+
+/* Header */
+
+.header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header-title {
+    margin-bottom: 20px;
+    font-size: 3rem;
+}
+
+.header-projects {
+    width: 300px;
+    min-width: 200px;
+    margin: 0 auto;
+}
+
+/* Dropdown */
+
+.Select-control, .Select-value-label, .Select-menu-outer, .Select-control > span {
+    background: #242633 !important;
+    color: white !important;
+}
+
+.Select-menu-outer div:hover {
+    cursor: pointer;
+}
+
+/* Footer */
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #FFF;
+    margin: 0 20px;
+    padding: 20px 20px 0 20px;
+}
+
+.footer-donation-content {
+    padding-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.footer-donation-addresses {
+    list-style: circle;
+    list-style-position: inside;
+    font-family: "Courier";
+}
+
+.footer-donation-address {
+    margin-left: 1rem;
+    padding-bottom: 5px;
+}
+
+.footer-links {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Section */
+
+.section-container {
+    background-color: #161A28;
+    border-radius: 20px;
+    padding: 30px 30px 15px 30px;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    width: 20%;
+    border-bottom: 1px solid #FFF;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    font-size: 2rem;
+    color: #FFF;
+    text-transform: uppercase;
+}
+
+/* Topic */
+
+.topic-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    align-content: stretch;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.topic-container>* {
+    flex: 1;
+    min-width: 350px;
+}
+
+.topic-title {
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.topic-title::after {
+    display: block;
+    width: 50px;
+    margin-top: 15px;
+    border-bottom: 1px solid #FFF;
+    content: '';
+}
+
+.topic {
+    padding: 20px;
+    background-color: #0D1117;
+    border-radius: 10px;
+}
+
+/* Metrics */
+
+.metrics-container {
+    list-style: circle;
+    list-style-position: inside;
+    font-size: 0.8rem;
+}
+
+.metrics-item {
+    margin-left: 1rem;
+    line-height: 2.5em;
+    list-style-position: outside;
+    font-family: "Ubuntu Mono";
+}
+
+/* Ids */
+
+#contract-address {
+    display: inline;
+}
+
+#distribution-network_figure {
+    border: none;
+    width: 100%;
+    height: 100%;
+}
+
+#distribution-network-figure {
+    min-height: 500px;
+}
+
+#contract-supply-figure,
+#contract-minted-figure,
+#sale-histogram-figure,
+#distribution-histogram-figure,
+#distribution-network-figure {
+    flex: 2;
+}
+
+#sale-histogram-figure {
+    flex: 4;
+    min-width: 500px;
+}
+
