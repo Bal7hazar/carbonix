@@ -202,6 +202,7 @@ a:hover {
 #distribution-histogram-figure,
 #distribution-network-figure {
     flex: 2;
+    min-width: 500px;
 }
 
 #sale-histogram-figure {
