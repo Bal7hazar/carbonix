@@ -14,7 +14,7 @@ class Dashboard(Dash):
         "tips.bal7hazar.eth",
         "0x4Ae827EcDB6Bc203846d904c3F7Dac0F72602d53",
     ]
-    fps = 1
+    fps = 0.2
 
     def __init__(self, controller, *args, **kwargs):
         """Build a dashboard."""
@@ -39,7 +39,7 @@ class Dashboard(Dash):
                     id="interval-component",
                     interval=1000 / self.fps,
                     n_intervals=0,
-                )
+                ),
             ],
         )
         self.setup_callbacks()
@@ -119,6 +119,7 @@ class Dashboard(Dash):
                 ),
             ],
             Input(component_id="projects-dropdown", component_property="value"),
+            Input("interval-component", "n_intervals"),
         )(self.update)
 
     def header(self):
@@ -141,7 +142,7 @@ class Dashboard(Dash):
                         className="header-projects",
                     ),
                     className="dropdown-container",
-                )
+                ),
             ],
         )
 
@@ -162,11 +163,23 @@ class Dashboard(Dash):
             "This dashboard relies on donations, your support is welcome:"
         )
         links = dict(
-            github=("https://github.com/Bal7hazar/carbonix", "./assets/images/github.svg"),
-            carbonable=("https://carbonable.io", "https://media-exp1.licdn.com/dms/image/C4E0BAQHEBIyofLboAw/company-logo_200_200/0/1626797273186?e=2147483647&v=beta&t=oZD83CvpjbnISmIHklklRHUY26GvUtORBFaTUHA43Cc"),
-            twitter=("https://twitter.com/Carbonable_io", "./assets/images/twitter.svg"),
+            github=(
+                "https://github.com/Bal7hazar/carbonix",
+                "./assets/images/github.svg",
+            ),
+            carbonable=(
+                "https://carbonable.io",
+                "https://media-exp1.licdn.com/dms/image/C4E0BAQHEBIyofLboAw/company-logo_200_200/0/1626797273186?e=2147483647&v=beta&t=oZD83CvpjbnISmIHklklRHUY26GvUtORBFaTUHA43Cc",
+            ),
+            twitter=(
+                "https://twitter.com/Carbonable_io",
+                "./assets/images/twitter.svg",
+            ),
             discord=("https://discord.gg/zUy9UvB7cd", "./assets/images/discord.svg"),
-            linkedin=("https://fr.linkedin.com/company/carbonable", "./assets/images/linkedin.svg"),
+            linkedin=(
+                "https://fr.linkedin.com/company/carbonable",
+                "./assets/images/linkedin.svg",
+            ),
             medium=("https://carbonable.medium.com/", "./assets/images/medium.svg"),
         )
         return html.Footer(
@@ -210,7 +223,7 @@ class Dashboard(Dash):
             ],
         )
 
-    def update(self, project_name):
+    def update(self, project_name, _):
         """Trigger the controller update method."""
         project = self._controller.projects.get(project_name)
         self._controller.update_view(project)

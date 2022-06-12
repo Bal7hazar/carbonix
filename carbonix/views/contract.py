@@ -60,7 +60,7 @@ class Contract(Section):
                 "Contract: ",
                 html.A(self._address, href=href),
             ],
-            id="contract-address"
+            id="contract-address",
         )
 
     @address.setter
@@ -108,7 +108,10 @@ class Contract(Section):
     @property
     def total_market_supply(self):
         """Return total market supply."""
-        return html.P(f"Total market supply: {self._total_market_supply}", id="contract-total_market_supply")
+        return html.P(
+            f"Total market supply: {self._total_market_supply}",
+            id="contract-total_market_supply",
+        )
 
     @total_market_supply.setter
     def total_market_supply(self, total_market_supply):
@@ -117,7 +120,10 @@ class Contract(Section):
     @property
     def total_reserved_supply(self):
         """Return total reserved supply."""
-        return html.P(f"Total reserved supply: {self._total_reserved_supply}", id="contract-total_reserved_supply")
+        return html.P(
+            f"Total reserved supply: {self._total_reserved_supply}",
+            id="contract-total_reserved_supply",
+        )
 
     @total_reserved_supply.setter
     def total_reserved_supply(self, total_reserved_supply):
@@ -135,7 +141,10 @@ class Contract(Section):
     @property
     def total_market_minted(self):
         """Return total market minted."""
-        return html.P(f"Total market minted: {self._total_market_minted}", id="contract-total_market_minted")
+        return html.P(
+            f"Total market minted: {self._total_market_minted}",
+            id="contract-total_market_minted",
+        )
 
     @total_market_minted.setter
     def total_market_minted(self, total_market_minted):
@@ -144,7 +153,10 @@ class Contract(Section):
     @property
     def total_reserved_minted(self):
         """Return total reserved minted."""
-        return html.P(f"Total reserved minted: {self._total_reserved_minted}", id="contract-total_reserved_minted")
+        return html.P(
+            f"Total reserved minted: {self._total_reserved_minted}",
+            id="contract-total_reserved_minted",
+        )
 
     @total_reserved_minted.setter
     def total_reserved_minted(self, total_reserved_minted):
@@ -153,7 +165,9 @@ class Contract(Section):
     @property
     def max_buy_at_once(self):
         """Return max buy at once."""
-        return html.P(f"Max buy at once: {self._max_buy_at_once}", id="contract-max_buy_at_once")
+        return html.P(
+            f"Max buy at once: {self._max_buy_at_once}", id="contract-max_buy_at_once"
+        )
 
     @max_buy_at_once.setter
     def max_buy_at_once(self, max_buy_at_once):
@@ -217,12 +231,9 @@ class Contract(Section):
         children = [
             html.H4("MetriX", className="topic-title rainbow"),
             html.Ul(
-                children=[
-                    html.Li(info, className="metrics-item")
-                    for info in infos
-                ],
+                children=[html.Li(info, className="metrics-item") for info in infos],
                 className="metrics-container",
-            )
+            ),
         ]
         return html.Div(children=children, className="topic")
 
@@ -232,7 +243,9 @@ class Contract(Section):
             html.H4("Total supply", className="topic-title"),
             dcc.Graph(id="contract-supply_figure", figure=self.supply_figure),
         ]
-        return html.Div(children=children, className="topic", id="contract-supply-figure")
+        return html.Div(
+            children=children, className="topic", id="contract-supply-figure"
+        )
 
     def minted(self):
         """Return contract minted."""
@@ -240,4 +253,6 @@ class Contract(Section):
             html.H4("Total minted", className="topic-title"),
             dcc.Graph(id="contract-minted_figure", figure=self.minted_figure),
         ]
-        return html.Div(children=children, className="topic", id="contract-minted-figure")
+        return html.Div(
+            children=children, className="topic", id="contract-minted-figure"
+        )

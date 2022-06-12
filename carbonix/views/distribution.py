@@ -92,16 +92,17 @@ class Distribution(Section):
 
     def metrics(self):
         """Return metrics."""
-        infos = [self.unique, self.mean, self.median,]
+        infos = [
+            self.unique,
+            self.mean,
+            self.median,
+        ]
         children = [
             html.H4("MetriX", className="topic-title rainbow"),
             html.Ul(
-                children=[
-                    html.Li(info, className="metrics-item")
-                    for info in infos
-                ],
+                children=[html.Li(info, className="metrics-item") for info in infos],
                 className="metrics-container",
-            )
+            ),
         ]
         return html.Div(children=children, className="topic", id="distirbution-metrics")
 
@@ -114,7 +115,9 @@ class Distribution(Section):
                 figure=self.histogram_figure,
             ),
         ]
-        return html.Div(children=children, className="topic", id="distribution-histogram-figure")
+        return html.Div(
+            children=children, className="topic", id="distribution-histogram-figure"
+        )
 
     def network(self):
         """Return network of distribution."""
@@ -125,4 +128,6 @@ class Distribution(Section):
                 id="distribution-network_figure",
             ),
         ]
-        return html.Div(children=children, className="topic", id="distribution-network-figure")
+        return html.Div(
+            children=children, className="topic", id="distribution-network-figure"
+        )

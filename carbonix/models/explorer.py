@@ -404,8 +404,7 @@ class Txn:
                 .get("block")
                 .get("header")
                 .get("time")
-            ).round(freq="S")
-            + "a",
+            ).round(freq="S"),
         )
 
     @property
