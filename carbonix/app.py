@@ -8,4 +8,4 @@ controller = DashboardController(__name__)
 server = controller.view.server
 
 if __name__ == "__main__":
-    controller.run(debug=False)
+    controller.run(debug=True)

@@ -256,7 +256,7 @@ class DashboardController:
 
         # update layout
         layout = HISTOGRAM_LAYOUT.copy()
-        layout.update({"bargap": 0.})
+        layout.update({"bargap": 0.0})
         fig.update_layout(layout)
         fig.update_traces(marker={"line": {"color": "black", "width": 1}})
         time_offset = pd.Timedelta(minutes=5)

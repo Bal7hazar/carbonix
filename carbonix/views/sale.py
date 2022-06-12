@@ -26,7 +26,10 @@ class Sale(Section):
     @property
     def total_presale_mint(self):
         """Return total presale mint events."""
-        return html.P(f"Total presale mint events: {self._total_presale_mint}", id="sale-total_presale_mint")
+        return html.P(
+            f"Total presale mint events: {self._total_presale_mint}",
+            id="sale-total_presale_mint",
+        )
 
     @total_presale_mint.setter
     def total_presale_mint(self, total_presale_mint):
@@ -35,7 +38,10 @@ class Sale(Section):
     @property
     def total_public_mint(self):
         """Return total public mint events."""
-        return html.P(f"Total public sale mint events: {self._total_public_mint}", id="sale-total_public_mint")
+        return html.P(
+            f"Total public sale mint events: {self._total_public_mint}",
+            id="sale-total_public_mint",
+        )
 
     @total_public_mint.setter
     def total_public_mint(self, total_public_mint):
@@ -44,7 +50,10 @@ class Sale(Section):
     @property
     def public_duration(self):
         """Return public sale duration."""
-        return html.P(f"Public sale sold out duration: {self._public_duration}", id="sale-public_duration")
+        return html.P(
+            f"Public sale sold out duration: {self._public_duration}",
+            id="sale-public_duration",
+        )
 
     @public_duration.setter
     def public_duration(self, public_duration):
@@ -53,7 +62,10 @@ class Sale(Section):
     @property
     def public_height(self):
         """Return public sale height."""
-        return html.P(f"Public sale sold out over {self._public_height} heights", id="sale-public_height")
+        return html.P(
+            f"Public sale sold out over {self._public_height} heights",
+            id="sale-public_height",
+        )
 
     @public_height.setter
     def public_height(self, public_height):
@@ -100,12 +112,9 @@ class Sale(Section):
         children = [
             html.H4("MetriX", className="topic-title rainbow"),
             html.Ul(
-                children=[
-                    html.Li(info, className="metrics-item")
-                    for info in infos
-                ],
+                children=[html.Li(info, className="metrics-item") for info in infos],
                 className="metrics-container",
-            )
+            ),
         ]
         return html.Div(children=children, className="topic")
 
@@ -115,4 +124,6 @@ class Sale(Section):
             html.H4("Mint events", className="topic-title"),
             dcc.Graph(id="sale-histogram_figure", figure=self.histogram_figure),
         ]
-        return html.Div(children=children, className="topic", id="sale-histogram-figure")
+        return html.Div(
+            children=children, className="topic", id="sale-histogram-figure"
+        )
