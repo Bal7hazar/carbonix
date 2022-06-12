@@ -80,7 +80,7 @@ a:hover {
     flex-direction: column;
     align-items: center;
     border-top: 1px solid #FFF;
-    width: 80%;
+    width: 90%;
     margin: 0 auto;
     padding: 20px 0 0 0;
 }
@@ -98,6 +98,7 @@ a:hover {
     list-style: circle;
     list-style-position: inside;
     font-family: "Courier";
+    font-size: 0.8em;
 }
 
 .footer-donation-address {
