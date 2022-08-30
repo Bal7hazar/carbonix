@@ -43,21 +43,15 @@ class Project:
         self.__total_public_minted = self._total_public_minted()
         self.__total_minted = self._total_minted()
 
-        # update features
-        self.check_update()
-
     def check_update(self):
-        """Check if there are new txs then clear cache accordingly."""
+        """Check if there are news txs then clear cache accordingly."""
         txs = self._explorer.txs(self._address, force=False)
         force_txs = self._explorer.txs(self._address, force=True)
         if len(txs) != len(force_txs):  # new txs
             self.cache_clear(self._explorer)  # cleear Explorer cache
             strftime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             backup_name = f"{DATA_BASE.stem}_{strftime}{DATA_BASE.suffix}"
-            try:
-                DATA_BASE.rename(DATA_BASE.parent / backup_name)
-            except:
-                pass
+            DATA_BASE.rename(DATA_BASE.parent / backup_name)
 
             # update properties
             self.__presale_height = self._presale_height()
