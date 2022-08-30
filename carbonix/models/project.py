@@ -47,7 +47,7 @@ class Project:
         self.check_update()
 
     def check_update(self):
-        """Check if there are news txs then clear cache accordingly."""
+        """Check if there are new txs then clear cache accordingly."""
         txs = self._explorer.txs(self._address, force=False)
         force_txs = self._explorer.txs(self._address, force=True)
         if len(txs) != len(force_txs):  # new txs
@@ -497,7 +497,8 @@ class Project:
     def _sale_timestamp(self):
         """Return project sale timestamp."""
         txs = self._explorer.sell_mode_txs(self.address)
-        enabled_txs = [txn for txn in txs if txn.message.get("sell_mode").get("enable")]
+        enabled_txs = [txn for txn in txs if txn.message.get(
+            "sell_mode").get("enable")]
         txn = sorted(enabled_txs, key=lambda txn: txn.height)[-1]
         return txn.timestamp
 
@@ -518,7 +519,8 @@ class Project:
     def _sale_height(self):
         """Return project sale height."""
         txs = self._explorer.sell_mode_txs(self.address)
-        enabled_txs = [txn for txn in txs if txn.message.get("sell_mode").get("enable")]
+        enabled_txs = [txn for txn in txs if txn.message.get(
+            "sell_mode").get("enable")]
         txn = sorted(enabled_txs, key=lambda txn: txn.height)[-1]
         return txn.height
 
@@ -633,5 +635,6 @@ class Project:
 
     def _mints(self):
         """Return mint event txs."""
-        txs = sorted(self._explorer.mint_txs(self.address), key=lambda txn: txn.hash)
+        txs = sorted(self._explorer.mint_txs(
+            self.address), key=lambda txn: txn.hash)
         return sorted(txs, key=lambda txn: txn.height)
