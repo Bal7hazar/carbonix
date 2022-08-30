@@ -54,7 +54,10 @@ class Project:
             self.cache_clear(self._explorer)  # cleear Explorer cache
             strftime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             backup_name = f"{DATA_BASE.stem}_{strftime}{DATA_BASE.suffix}"
-            DATA_BASE.rename(DATA_BASE.parent / backup_name)
+            try:
+                DATA_BASE.rename(DATA_BASE.parent / backup_name)
+            except:
+                pass
 
             # update properties
             self.__presale_height = self._presale_height()
