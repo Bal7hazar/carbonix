@@ -21,7 +21,8 @@ class DashboardController:
 
     def __init__(self, name) -> None:
         """Build a dashboard controller."""
-        projects = [self.load_project(address) for address in CONTRACT_ADDRESSES]
+        projects = [self.load_project(address)
+                    for address in CONTRACT_ADDRESSES]
         self.projects = {project.name: project for project in projects}
         self.view = Dashboard(self, name)
         for project in reversed(projects):
@@ -44,7 +45,6 @@ class DashboardController:
     def update_view(self, project):
         """Update the whole view."""
         if project:
-            project.check_update()
             self.update_contract(project)
             self.update_distribution(project)
             self.update_sale(project)
@@ -79,7 +79,8 @@ class DashboardController:
             columns=["supply"],
         )
         data["name"] = data.index.to_series()
-        colors = [color.hex_l for color in PURPLE.range_to(GREEN, data.shape[0])]
+        colors = [color.hex_l for color in PURPLE.range_to(
+            GREEN, data.shape[0])]
         fig = go.Figure(data=[go.Pie(labels=data.name, values=data.supply)])
         fig.update_traces(
             hoverinfo="label+percent",
@@ -101,7 +102,8 @@ class DashboardController:
             columns=["minted"],
         )
         data["name"] = data.index.to_series()
-        colors = [color.hex_l for color in PURPLE.range_to(GREEN, data.shape[0])]
+        colors = [color.hex_l for color in PURPLE.range_to(
+            GREEN, data.shape[0])]
         fig = go.Figure(data=[go.Pie(labels=data.name, values=data.minted)])
         fig.update_traces(
             hoverinfo="label+percent",
@@ -261,7 +263,8 @@ class DashboardController:
         fig.update_traces(marker={"line": {"color": "black", "width": 1}})
         time_offset = pd.Timedelta(minutes=5)
         fig.update_xaxes(
-            range=[presale_timestamp - time_offset, last_timestamp + time_offset],
+            range=[presale_timestamp - time_offset,
+                   last_timestamp + time_offset],
             dtick=10 * 60e3,
         )
         fig.update_yaxes(
